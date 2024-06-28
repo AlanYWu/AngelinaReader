@@ -4,3 +4,4 @@
 web_app/static/data/
 venv/
 Logs/
+/liblouis-3*/
