@@ -59,16 +59,38 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/img2braille', methods=['POST'])
-def img2braille():
-    # Get the image from the request
-    image = request.files['image']
+from flask import Flask, request, send_file
+import subprocess
+import os
 
-    # Process the image and get the braille text
-    braille_text = process_image(image)
+app = Flask(__name__)
 
-    # Return the braille text
-    return jsonify({'braille_text': braille_text})
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return 'No file part', 400
+    file = request.files['file']
+    if file.filename == '':
+        return 'No selected file', 400
+    if file:
+        filename = 'test.jpg'
+        file.save(filename)
+        # Process the image
+        subprocess.run(['python', 'run_local.py'])
+        # Assuming run_local.py generates 'test_marked.brf' or 'test_marked.txt'
+        processed_file = 'test_marked.txt'  # or 'test_marked.brf', adjust as needed
+
+        # Return the contents of the processed file
+        with open(processed_file, 'r') as file:
+            contents = file.read()
+        return contents
+    
+        # Return the processed file
+        # if not os.path.exists(processed_file):
+        #     return 'Processing failed', 500
+        # return send_file(processed_file, as_attachment=True)
+        
+
 
 if __name__ == '__main__':
     app.run(debug=True,use_reloader=False, threaded=False)

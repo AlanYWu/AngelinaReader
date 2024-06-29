@@ -1,3 +1,21 @@
+## The logic for the API
+- User (client) posts the input image.
+- Server retrieves and saves the image as `test.png`.
+- Server processes the image using `run_local.py`, generating `test_marked.brf`.
+- Server sends the processed data (`test_marked.brf` or converted `.txt`) back to the client.
+
+## Implementation
+1. Install the necessary packages
+```bash
+pip install Flask
+pip install requests
+pip install gunicorn
+```
+2. let the server to run continuously. 
+```bash
+gunicorn -w 4 -b 0.0.0.0:5000 api_img2braille_server:app
+```
+
 ## The installation guidelines
 ### The requirements.txt
 remove this from the `requirements.txt` `PyMuPDF>=1.17.5` 
