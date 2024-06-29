@@ -7,7 +7,7 @@ def upload_file(url, file_path):
         return response
 
 if __name__ == '__main__':
-    url = 'http://localhost:5000/upload'
+    url = 'http://localhost:12306/image_to_braille'
     file_path = 'input.jpg'  # Update this path to the file you want to upload
     response = upload_file(url, file_path)
     print(f'Status Code: {response.status_code}')
