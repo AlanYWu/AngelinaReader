@@ -66,6 +66,8 @@ import os
 
 app = Flask(__name__)
 
+delete_tmp = True
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -80,13 +82,28 @@ def upload_file():
         # Process the image
         convert_img_to_braille(filename)
         # Assuming run_local.py generates 'test_marked.brf' or 'test_marked.txt'
-        processed_file = 'test_marked.brl'  # or 'test_marked.brf', adjust as needed
+        processed_file = 'test.marked.brl'  # or 'test_marked.brf', adjust as needed
         print("processed_file:", processed_file)
         # Return the contents of the processed file
         with open(processed_file, 'r') as file:
             contents = file.read()
+            def delete_files():
+                files_to_delete = ['test.jpg', 'test.marked.brl', 'test.marked.jpg', 'test.marked.txt']
+                for file in files_to_delete:
+                    if os.path.exists(file):
+                        os.remove(file)
+                        print(f"{file} has been deleted.")
+                    else:
+                        print(f"{file} does not exist.")
+            if delete_tmp:
+                delete_files()
+        delete_files()
         return contents
-    
+
+        #help me to deletetest.jpg, test.marked.brl, test.marded.jpg, test.marked.txt
+
+
+
         # Return the processed file
         # if not os.path.exists(processed_file):
         #     return 'Processing failed', 500

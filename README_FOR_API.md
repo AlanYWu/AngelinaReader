@@ -17,13 +17,22 @@ pip install gunicorn
 export FLASK_APP=api_img2braille_server.py  # Replace your_flask_app.py with the name of your Flask application file
 export FLASK_ENV=development  # Optional: This enables debug mode for more informative error messages
 flask run
-
-
-
-
-
-gunicorn -w 4 -b 0.0.0.0:5000 api_img2braille_server:app
 ```
+
+## How to run the API
+### Server
+```bash
+tmux a -t wy-img2braille-server
+flask run
+```
+
+### Client
+```bash
+tmux a -t wy-img2braille-client
+python api_img2braille_client.py
+```
+
+
 
 ## The installation guidelines
 ### The requirements.txt
