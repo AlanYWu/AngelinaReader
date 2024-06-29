@@ -8,11 +8,20 @@
 1. Install the necessary packages
 ```bash
 pip install Flask
+pip install --upgrade Flask
 pip install requests
 pip install gunicorn
 ```
 2. let the server to run continuously. 
 ```bash
+export FLASK_APP=api_img2braille_server.py  # Replace your_flask_app.py with the name of your Flask application file
+export FLASK_ENV=development  # Optional: This enables debug mode for more informative error messages
+flask run
+
+
+
+
+
 gunicorn -w 4 -b 0.0.0.0:5000 api_img2braille_server:app
 ```
 
