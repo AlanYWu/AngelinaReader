@@ -4,7 +4,8 @@ from ovotools import AttrDict
 settings = AttrDict(
     max_epochs=100000,
     tensorboard_port=6006,
-    device='cuda:3',
+    # device='cuda:3',
+    device='cpu',
     findLR=False,
     can_overwrite=False,
 )
@@ -21,11 +22,14 @@ params = AttrDict(
         max_std = 0.1,
         train_list_file_names = [
             #r'DSBI/data/val_li2.txt',
-            r'DSBI/data/train_li2.txt',
+            # r'DSBI/data/train_li2.txt',
+            r'AngelinaDataset/handwritten/train.txt',
         ],
         val_list_file_names = {
-            'val' :  [r'DSBI/data/val_li2.txt',],
-            'test' :  [r'DSBI/data/test_li2.txt',]
+            # 'val' :  [r'DSBI/data/val_li2.txt',],
+            # 'test' :  [r'DSBI/data/test_li2.txt',]
+            'val' :  [r'AngelinaDataset/handwritten/val.txt',],
+            # 'test' :  [r'AngelinaDataset/books/test.txt',]  # Uncomment and set if you have a test set
         }
     ),
     augmentation = AttrDict(

@@ -23,6 +23,8 @@ from model import create_model_retinanet
 from model.params import params, settings
 import model.validate_retinanet as validate_retinanet
 
+import pdb; pdb.set_trace()
+
 if settings.findLR:
     params.model_name += '_findLR'
 params.save(can_overwrite=settings.can_overwrite)
