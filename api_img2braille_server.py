@@ -6,7 +6,7 @@ Local application for Angelina Braille Reader inference
 import argparse
 import os
 from pathlib import Path
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 import local_config
 import model.infer_retinanet as infer_retinanet
 
@@ -135,6 +135,61 @@ def upload_file():
             if delete_tmp:
                 delete_files()
         return contents
+
+
+@app.route("/image_to_braille_example", methods=["POST"])
+def image_to_braille_example():
+    """
+    Process an image file from a given path and return braille text.
+    Expects JSON payload with 'image_path' parameter.
+    """
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        image_path = data.get("image_path")
+        if not image_path:
+            return jsonify({"error": "No image_path provided"}), 400
+        
+        # Check if the image file exists
+        if not os.path.exists(image_path):
+            return jsonify({"error": f"Image file not found: {image_path}"}), 404
+        
+        # Validate file extension
+        if not Path(image_path).suffix.lower() in (
+            ".jpg", ".jpe", ".jpeg", ".png", ".gif", ".svg", ".bmp"
+        ):
+            return jsonify({"error": f"Unsupported file format: {Path(image_path).suffix}"}), 400
+        
+        print(f"Processing example image: {image_path}")
+        
+        # Process the image using the existing conversion function
+        convert_img_to_braille(image_path)
+        
+        # Look for the generated braille file
+        # The convert_img_to_braille function generates files with .marked.brl extension
+        base_name = Path(image_path).stem
+        processed_file = f"{base_name}.marked.brl"
+        
+        if not os.path.exists(processed_file):
+            return jsonify({"error": f"Braille conversion failed - output file not found: {processed_file}"}), 500
+        
+        # Read and return the braille content
+        with open(processed_file, "r", encoding="utf-8") as file:
+            braille_content = file.read()
+        
+        print(f"Successfully processed example image: {image_path}")
+        return jsonify({
+            "success": True,
+            "braille_text": braille_content,
+            "image_path": image_path
+        })
+        
+    except Exception as e:
+        print(f"Error in image_to_braille_example: {str(e)}")
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
