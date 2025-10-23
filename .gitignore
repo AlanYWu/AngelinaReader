@@ -6,3 +6,4 @@ venv/
 Logs/
 /liblouis-3*/
 weights/model.t7
+*.DS_Store
