@@ -139,4 +139,4 @@ def upload_file():
 
 if __name__ == "__main__":
     # convert_img_to_braille("input.jpg")
-    app.run(host="0.0.0.0", port=12306, debug=True, use_reloader=False, threaded=False)
+    app.run(host="127.0.0.1", port=12306, debug=True, use_reloader=False, threaded=False)
