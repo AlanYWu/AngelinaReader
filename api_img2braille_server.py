@@ -115,7 +115,7 @@ def upload_file():
         processed_file = "test.marked.brl"  # or 'test_marked.brf', adjust as needed
         print("processed_file:", processed_file)
         # Return the contents of the processed file
-        with open(processed_file, "r") as file:
+        with open(processed_file, "r", encoding="utf-8") as file:
             contents = file.read()
 
             def delete_files():
