@@ -176,8 +176,11 @@ class BrailleInference:
     def __init__(self, params_fn=params_fn, model_weights_fn=model_weights_fn, create_script = None,
                  verbose=1, inference_width=inference_width, device=device):
         self.verbose = verbose
-        if not torch.cuda.is_available() and device != 'cpu':
-            print('CUDA not availabel. CPU is used')
+        if device == 'mps' and not torch.backends.mps.is_available():
+            print('MPS not available. CPU is used')
+            device = 'cpu'
+        elif device != 'cpu' and device != 'mps' and not torch.cuda.is_available():
+            print('CUDA not available. CPU is used')
             device = 'cpu'
 
         params = AttrDict.load(params_fn, verbose=verbose)

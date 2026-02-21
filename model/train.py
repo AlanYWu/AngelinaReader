@@ -23,8 +23,6 @@ from model import create_model_retinanet
 from model.params import params, settings
 import model.validate_retinanet as validate_retinanet
 
-import pdb; pdb.set_trace()
-
 if settings.findLR:
     params.model_name += '_findLR'
 params.save(can_overwrite=settings.can_overwrite)
@@ -51,15 +49,15 @@ for k,v in val_loaders.items():
 ctx.optimizer = eval(params.optim)(model.parameters(), **params.optim_params)
 
 metrics = OrderedDict({
-    'loss': ignite.metrics.Loss(loss.metric('loss'), batch_size=lambda y: params.data.batch_size), # loss calc already called when train
-    'loc': ignite.metrics.Loss(loss.metric('loc'), batch_size=lambda y: params.data.batch_size),
-    'cls': ignite.metrics.Loss(loss.metric('cls'), batch_size=lambda y: params.data.batch_size),
+    'loss': ignite.metrics.Loss(loss.metric('loss'), batch_size=lambda y: params.data.batch_size, skip_unrolling=True), # loss calc already called when train
+    'loc': ignite.metrics.Loss(loss.metric('loc'), batch_size=lambda y: params.data.batch_size, skip_unrolling=True),
+    'cls': ignite.metrics.Loss(loss.metric('cls'), batch_size=lambda y: params.data.batch_size, skip_unrolling=True),
 })
 
 eval_metrics = OrderedDict({
-    'loss': ignite.metrics.Loss(loss, batch_size=lambda y: params.data.batch_size), # loss calc must be called when eval
-    'loc': ignite.metrics.Loss(loss.metric('loc'), batch_size=lambda y: params.data.batch_size),
-    'cls': ignite.metrics.Loss(loss.metric('cls'), batch_size=lambda y: params.data.batch_size),
+    'loss': ignite.metrics.Loss(loss, batch_size=lambda y: params.data.batch_size, skip_unrolling=True), # loss calc must be called when eval
+    'loc': ignite.metrics.Loss(loss.metric('loc'), batch_size=lambda y: params.data.batch_size, skip_unrolling=True),
+    'cls': ignite.metrics.Loss(loss.metric('cls'), batch_size=lambda y: params.data.batch_size, skip_unrolling=True),
 })
 
 target_metric = 'train:loss'
@@ -118,7 +116,7 @@ else:
         if engine.state.epoch % 100 == 1:
             data_set = validate_retinanet.prepare_data(ctx.params.data.val_list_file_names)
             for key, data_list in data_set.items():
-                acc_res = validate_retinanet.evaluate_accuracy(os.path.join(ctx.params.get_base_filename(), 'param.txt'),
+                acc_res = validate_retinanet.evaluate_accuracy(ctx.params.get_base_filename() + '.param.txt',
                                                                model, settings.device, data_list)
                 for rk, rv in acc_res.items():
                     engine.state.metrics[key+ ':' + rk] = rv

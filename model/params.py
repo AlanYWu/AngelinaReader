@@ -5,9 +5,9 @@ settings = AttrDict(
     max_epochs=100000,
     tensorboard_port=6006,
     # device='cuda:3',
-    device='cpu',
+    device='mps',
     findLR=False,
-    can_overwrite=False,
+    can_overwrite=True,
 )
 
 params = AttrDict(
@@ -21,15 +21,15 @@ params = AttrDict(
         rect_margin = 0.3, #  every of 4 margions to char width
         max_std = 0.1,
         train_list_file_names = [
-            #r'DSBI/data/val_li2.txt',
-            # r'DSBI/data/train_li2.txt',
+            r'DSBI/train.txt',
             r'AngelinaDataset/handwritten/train.txt',
+            r'AngelinaDataset/books/train.txt',
+            r'AngelinaDataset/not_braille/train.txt',
         ],
         val_list_file_names = {
-            # 'val' :  [r'DSBI/data/val_li2.txt',],
-            # 'test' :  [r'DSBI/data/test_li2.txt',]
-            'val' :  [r'AngelinaDataset/handwritten/val.txt',],
-            # 'test' :  [r'AngelinaDataset/books/test.txt',]  # Uncomment and set if you have a test set
+            'val_dsbi' :  [r'DSBI/test.txt',],
+            'val_handwritten' :  [r'AngelinaDataset/handwritten/val.txt',],
+            'val_books' :  [r'AngelinaDataset/books/val.txt',],
         }
     ),
     augmentation = AttrDict(
