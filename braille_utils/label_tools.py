@@ -115,8 +115,13 @@ def human_label_to_int(label):
         if not ch_list:
             raise ValueError("unrecognized label: " + label)
         if len(ch_list) > 1:
-            raise ValueError("label: " + label + " has more then 1 meanings: " + str(ch_list))
-        label123 = list(ch_list)[0]
+            # For ambiguous labels, prefer SYM/RU mapping
+            if label in _priority_dict:
+                label123 = _priority_dict[label]
+            else:
+                raise ValueError("label: " + label + " has more then 1 meanings: " + str(ch_list))
+        else:
+            label123 = list(ch_list)[0]
     return label123_to_int(label123)
 
 
@@ -141,6 +146,13 @@ reverce_dict = defaultdict(set)
 for d in letters.letter_dicts.values():
     for lbl123, char in d.items():
         reverce_dict[char].add(lbl123)
+
+# priority dict: for ambiguous labels, pick first occurrence across all dicts
+_priority_dict = {}
+for d in letters.letter_dicts.values():
+    for lbl123, char in d.items():
+        if char not in _priority_dict:
+            _priority_dict[char] = lbl123
 
 # global list of 64 bools indicating what labels are valid in most common language dicts
 label_is_valid = [

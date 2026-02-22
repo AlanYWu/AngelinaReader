@@ -27,7 +27,7 @@ params = AttrDict(
             r'AngelinaDataset/not_braille/train.txt',
         ],
         val_list_file_names = {
-            'val_dsbi' :  [r'DSBI/test.txt',],
+            'val' :  [r'DSBI/test.txt',],
             'val_handwritten' :  [r'AngelinaDataset/handwritten/val.txt',],
             'val_books' :  [r'AngelinaDataset/books/val.txt',],
         }

@@ -111,10 +111,26 @@ tail -f NN_results/dsbi_lay5_*/log.log
 conda activate angelina && tensorboard --logdir NN_results/dsbi_lay5_*/tb_log --port 6006
 ```
 
+8. **Fixed ambiguous label resolution** in `braille_utils/label_tools.py`: The AngelinaDataset annotations use text characters (e.g., ".", "z") as labels. The same character can map to different Braille dot patterns in different languages (e.g., "." = dots 2,5,6 in Russian, dot 3 in Polish). The reverse lookup `human_label_to_int()` crashed on 10 ambiguous labels. Fixed by adding a `_priority_dict` that picks the first occurrence across all language dictionaries (SYM first, then RU, EN, etc.)
+9. **Used all available datasets** in `model/params.py`:
+   - Train (261 images): DSBI (26) + AngelinaDataset books (169) + handwritten (22) + not_braille (44 negative examples)
+   - Val: DSBI test (88) as `'val'` (primary, used by BestModelBuffer), handwritten (6), books (43)
+   - The primary val set must be named `'val'` because `BestModelBuffer` looks for `'val:loss'`
+
+### Training results (Feb 2025)
+Trained on all datasets with MPS. Model converged by ~epoch 500 (first CLR cycle).
+
+| Epoch | val (DSBI) F1 | handwritten F1 | books F1 |
+|-------|--------------|----------------|----------|
+| 172   | 97.4%        | 98.5%          | 97.8%    |
+| 1000  | 99.3%        | 99.5%          | 99.6%    |
+
+Best model saved at `NN_results/dsbi_lay5_66a5f3/models/clr.001.t7` (end of first CLR cycle).
+
 ### Training speed
-- ~4 sec/epoch on Apple Silicon MPS (26 train images, batch_size=12, 3 batches)
-- 100,000 epochs (full config) would take ~4.6 days
-- First CLR cycle completes at epoch 500 (~33 min)
+- ~17 sec/epoch on Apple Silicon MPS with all datasets (261 train images, batch_size=12)
+- ~4 sec/epoch with DSBI only (26 images)
+- First CLR cycle completes at epoch 500 (~2.4 hours)
 
 ## Known Issues
 
