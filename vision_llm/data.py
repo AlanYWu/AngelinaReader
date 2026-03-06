@@ -16,9 +16,8 @@ import PIL.Image
 import torch
 from torch.utils.data import Dataset
 
-# Use existing AngelinaReader utilities
+# Use existing AngelinaReader utilities (lazy imports to avoid liblouis dependency)
 import braille_utils.label_tools as lt
-from braille_utils.postprocess import boxes_to_lines
 
 
 def _read_labelme_annotations(json_path: str) -> List[Tuple]:
@@ -57,6 +56,7 @@ def rects_to_braille_text(rects: List[Tuple], lang: str = "EN") -> str:
     """
     if not rects:
         return ""
+    from braille_utils.postprocess import boxes_to_lines
     boxes = [(r[0], r[1], r[2], r[3]) for r in rects]
     labels = [r[4] for r in rects]
     lines = boxes_to_lines(boxes, labels, lang=lang, filter_lonely=True)
