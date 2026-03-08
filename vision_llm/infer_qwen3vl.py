@@ -13,6 +13,7 @@ import json
 import os
 
 import torch
+from PIL import Image
 from peft import PeftModel
 from transformers import Qwen3VLForConditionalGeneration, Qwen3VLProcessor
 
@@ -56,11 +57,13 @@ def main():
             infer_messages, tokenize=False, add_generation_prompt=True
         )
 
-        # Extract image
+        # Extract image - strip file:// prefix for local paths
         image_url = messages[0]["content"][0]["image"]
+        image_path = image_url.replace("file://", "")
+        img = Image.open(image_path).convert("RGB")
         inputs = processor(
             text=[text],
-            images=[image_url],
+            images=[img],
             padding=True,
             return_tensors="pt",
         ).to(model.device)
