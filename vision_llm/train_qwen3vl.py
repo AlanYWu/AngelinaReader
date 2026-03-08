@@ -13,12 +13,12 @@ import json
 import os
 
 import torch
+from PIL import Image
 from datasets import Dataset
 from peft import LoraConfig, TaskType
 from transformers import (
     Qwen3VLForConditionalGeneration,
     Qwen3VLProcessor,
-    BitsAndBytesConfig,
 )
 from trl import SFTTrainer, SFTConfig
 
@@ -101,7 +101,7 @@ def main():
         load_best_model_at_end=True if eval_dataset else False,
         metric_for_best_model="eval_loss" if eval_dataset else None,
         greater_is_better=False,
-        dataloader_num_workers=4,
+        dataloader_num_workers=0,
         remove_unused_columns=False,
         gradient_checkpointing=True,
         report_to="none",
@@ -121,12 +121,14 @@ def main():
             )
             texts.append(text)
 
-            # Extract images from messages
+            # Load images as PIL objects directly
             for msg in messages:
                 if isinstance(msg["content"], list):
                     for item in msg["content"]:
                         if item.get("type") == "image":
-                            images.append(item["image"])
+                            img_path = item["image"].replace("file://", "")
+                            img = Image.open(img_path).convert("RGB")
+                            images.append(img)
 
         # Process with the VL processor
         batch = processor(
@@ -146,12 +148,8 @@ def main():
         # Mask everything up to and including the assistant header token
         # For Qwen3-VL, the assistant turn starts after <|im_start|>assistant\n
         for i in range(len(texts)):
-            input_ids = batch["input_ids"][i]
             # Find the start of assistant content
-            # The pattern is: ...<|im_start|>assistant\n{content}<|im_end|>
-            # We want to mask everything before the content
             text = texts[i]
-            # Tokenize just the prompt part (up to assistant content)
             assistant_marker = "<|im_start|>assistant\n"
             marker_pos = text.rfind(assistant_marker)
             if marker_pos >= 0:
