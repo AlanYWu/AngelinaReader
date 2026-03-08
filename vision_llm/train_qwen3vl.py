@@ -13,13 +13,13 @@ import json
 import os
 
 import torch
-from PIL import Image
 from datasets import Dataset
 from peft import LoraConfig, TaskType
 from transformers import (
     Qwen3VLForConditionalGeneration,
     Qwen3VLProcessor,
 )
+from qwen_vl_utils import process_vision_info
 from trl import SFTTrainer, SFTConfig
 
 
@@ -112,28 +112,24 @@ def main():
     # Collator that handles vision inputs
     def collate_fn(examples):
         texts = []
-        images = []
+        image_inputs_list = []
         for ex in examples:
             messages = ex["messages"]
-            # Apply chat template
+            # Apply chat template to get text with image placeholders
             text = processor.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=False
             )
             texts.append(text)
 
-            # Load images as PIL objects directly
-            for msg in messages:
-                if isinstance(msg["content"], list):
-                    for item in msg["content"]:
-                        if item.get("type") == "image":
-                            img_path = item["image"].replace("file://", "")
-                            img = Image.open(img_path).convert("RGB")
-                            images.append(img)
+            # Use qwen_vl_utils to properly extract and process images
+            images, videos = process_vision_info(messages)
+            if images:
+                image_inputs_list.extend(images)
 
         # Process with the VL processor
         batch = processor(
             text=texts,
-            images=images if images else None,
+            images=image_inputs_list if image_inputs_list else None,
             padding=True,
             truncation=True,
             max_length=2048,
@@ -145,10 +141,8 @@ def main():
         # Mask padding
         labels[labels == processor.tokenizer.pad_token_id] = -100
 
-        # Mask everything up to and including the assistant header token
-        # For Qwen3-VL, the assistant turn starts after <|im_start|>assistant\n
+        # Mask prompt tokens (everything before assistant content)
         for i in range(len(texts)):
-            # Find the start of assistant content
             text = texts[i]
             assistant_marker = "<|im_start|>assistant\n"
             marker_pos = text.rfind(assistant_marker)
@@ -157,7 +151,6 @@ def main():
                 prompt_ids = processor.tokenizer.encode(
                     prompt_text, add_special_tokens=False
                 )
-                # Mask prompt tokens
                 labels[i, :len(prompt_ids)] = -100
 
         batch["labels"] = labels
