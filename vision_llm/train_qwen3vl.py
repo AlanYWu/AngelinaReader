@@ -28,6 +28,28 @@ def load_json_data(path):
         return json.load(f)
 
 
+def clean_messages(messages):
+    """Remove null-valued keys from content items that Dataset.from_list adds.
+
+    HF Datasets normalizes all dicts in a list to the same schema, padding
+    missing keys with None. This causes process_vision_info to see 'image': None
+    in assistant content items, crashing in fetch_image.
+    """
+    cleaned = []
+    for msg in messages:
+        new_msg = {"role": msg["role"]}
+        if isinstance(msg["content"], list):
+            new_content = []
+            for item in msg["content"]:
+                new_item = {k: v for k, v in item.items() if v is not None}
+                new_content.append(new_item)
+            new_msg["content"] = new_content
+        else:
+            new_msg["content"] = msg["content"]
+        cleaned.append(new_msg)
+    return cleaned
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_path", type=str, default="/data1/wy/models/Qwen3-VL-8B-Instruct")
@@ -132,7 +154,7 @@ def main():
         texts = []
         image_inputs_list = []
         for ex in examples:
-            messages = ex["messages"]
+            messages = clean_messages(ex["messages"])
             # Apply chat template to get text with image placeholders
             text = processor.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=False
