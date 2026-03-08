@@ -1,7 +1,7 @@
 """Fine-tune Qwen3-VL-8B on braille OCR with LoRA + SFTTrainer.
 
-Usage:
-    CUDA_VISIBLE_DEVICES=0 python vision_llm/train_qwen3vl.py \
+Usage (multi-GPU with DeepSpeed):
+    torchrun --nproc_per_node=8 vision_llm/train_qwen3vl.py \
         --model_path /data1/wy/models/Qwen3-VL-8B-Instruct \
         --train_data vision_llm/train.json \
         --val_data vision_llm/val.json \
@@ -107,6 +107,24 @@ def main():
         report_to="none",
         dataset_text_field="",  # not used, we use dataset_kwargs
         dataset_kwargs={"skip_prepare_dataset": True},
+        # DeepSpeed ZeRO-2 for multi-GPU
+        deepspeed={
+            "bf16": {"enabled": True},
+            "zero_optimization": {
+                "stage": 2,
+                "offload_optimizer": {"device": "none"},
+                "allgather_partitions": True,
+                "allgather_bucket_size": 2e8,
+                "overlap_comm": True,
+                "reduce_scatter": True,
+                "reduce_bucket_size": 2e8,
+                "contiguous_gradients": True,
+            },
+            "gradient_accumulation_steps": "auto",
+            "gradient_clipping": "auto",
+            "train_batch_size": "auto",
+            "train_micro_batch_size_per_gpu": "auto",
+        },
     )
 
     # Collator that handles vision inputs
@@ -141,17 +159,30 @@ def main():
         # Mask padding
         labels[labels == processor.tokenizer.pad_token_id] = -100
 
-        # Mask prompt tokens (everything before assistant content)
+        # Find assistant start token in the actual input_ids (not re-encoded text).
+        # The processor inserts image tokens that tokenizer.encode() doesn't know
+        # about, so we must search for the marker tokens in the processed sequence.
+        # Qwen3-VL chat format: ...<|im_start|>assistant\n{content}<|im_end|>
+        im_start_id = processor.tokenizer.convert_tokens_to_ids("<|im_start|>")
+        assistant_token_ids = processor.tokenizer.encode("assistant\n", add_special_tokens=False)
         for i in range(len(texts)):
-            text = texts[i]
-            assistant_marker = "<|im_start|>assistant\n"
-            marker_pos = text.rfind(assistant_marker)
-            if marker_pos >= 0:
-                prompt_text = text[:marker_pos + len(assistant_marker)]
-                prompt_ids = processor.tokenizer.encode(
-                    prompt_text, add_special_tokens=False
-                )
-                labels[i, :len(prompt_ids)] = -100
+            ids = batch["input_ids"][i].tolist()
+            # Find the last <|im_start|> followed by "assistant\n" tokens
+            mask_end = 0
+            for j in range(len(ids) - 1, -1, -1):
+                if ids[j] == im_start_id:
+                    # Check if next tokens match "assistant\n"
+                    match = True
+                    for k, tid in enumerate(assistant_token_ids):
+                        if j + 1 + k >= len(ids) or ids[j + 1 + k] != tid:
+                            match = False
+                            break
+                    if match:
+                        # Mask up to and including "assistant\n"
+                        mask_end = j + 1 + len(assistant_token_ids)
+                        break
+            if mask_end > 0:
+                labels[i, :mask_end] = -100
 
         batch["labels"] = labels
         return batch
