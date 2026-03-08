@@ -55,8 +55,8 @@ def main():
 
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         args.model_path,
-        torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
+        dtype=torch.bfloat16,
+        attn_implementation="sdpa",
     )
 
     # LoRA config targeting language model layers

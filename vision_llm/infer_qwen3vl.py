@@ -31,8 +31,8 @@ def main():
     processor = Qwen3VLProcessor.from_pretrained(args.model_path)
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         args.model_path,
-        torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
+        dtype=torch.bfloat16,
+        attn_implementation="sdpa",
         device_map="auto",
     )
     model = PeftModel.from_pretrained(model, args.lora_path)
