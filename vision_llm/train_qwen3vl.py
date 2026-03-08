@@ -104,7 +104,7 @@ def main():
         dataloader_num_workers=4,
         remove_unused_columns=False,
         gradient_checkpointing=True,
-        report_to="tensorboard",
+        report_to="none",
         dataset_text_field="",  # not used, we use dataset_kwargs
         dataset_kwargs={"skip_prepare_dataset": True},
     )
