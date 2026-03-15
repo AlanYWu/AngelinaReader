@@ -62,9 +62,9 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--lora_r", type=int, default=64)
     parser.add_argument("--lora_alpha", type=int, default=16)
-    parser.add_argument("--max_pixels", type=int, default=1003520,
-                        help="Max pixels per image (default ~1003x1003)")
-    parser.add_argument("--min_pixels", type=int, default=256 * 28 * 28,
+    parser.add_argument("--max_pixels", type=int, default=2016 * 2016,
+                        help="Max pixels per image (default ~2016x2016 for braille detail)")
+    parser.add_argument("--min_pixels", type=int, default=512 * 28 * 28,
                         help="Min pixels per image")
     args = parser.parse_args()
 
@@ -172,7 +172,7 @@ def main():
             images=image_inputs_list if image_inputs_list else None,
             padding=True,
             truncation=True,
-            max_length=2048,
+            max_length=4096,
             return_tensors="pt",
         )
 
