@@ -20,6 +20,7 @@ Usage:
 
 import argparse
 import json
+import random
 import sys
 import os
 
@@ -27,6 +28,55 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from vision_llm.data import collect_samples, _read_labelme_annotations, _read_dsbi_annotations, rects_to_braille_text
 import PIL.Image
+
+# Braille unicode range: U+2800 to U+28FF (256 patterns)
+BRAILLE_CHARS = [chr(c) for c in range(0x2800, 0x2900)]
+
+
+def add_noise_to_braille(text, error_rate=0.05, seed=None):
+    """Simulate RetinaNet-like errors by corrupting ground truth braille text.
+
+    Applies random substitutions, deletions, and insertions at the character
+    level to mimic the ~1-5% error rate of a real detection model.
+
+    Args:
+        text: Ground truth braille unicode text
+        error_rate: Probability of error per character (default 5%)
+        seed: Random seed for reproducibility
+    """
+    if seed is not None:
+        rng = random.Random(seed)
+    else:
+        rng = random.Random()
+
+    result = []
+    for char in text:
+        if char == '\n' or char == ' ':
+            result.append(char)
+            continue
+
+        r = rng.random()
+        if r < error_rate * 0.5:
+            # Substitution (most common RetinaNet error): wrong dot pattern
+            # Flip 1-2 bits in the braille pattern to get a nearby character
+            code = ord(char) - 0x2800
+            if 0 <= code < 256:
+                bit = rng.randint(0, 7)
+                noisy_code = code ^ (1 << bit)
+                result.append(chr(0x2800 + noisy_code))
+            else:
+                result.append(char)
+        elif r < error_rate * 0.7:
+            # Deletion: character missed by detector
+            pass
+        elif r < error_rate:
+            # Insertion: false positive detection
+            result.append(char)
+            result.append(rng.choice(BRAILLE_CHARS))
+        else:
+            result.append(char)
+
+    return ''.join(result)
 
 # Prompt templates
 PROMPT_VISION_ONLY = "Transcribe the braille in this image."
@@ -102,6 +152,10 @@ def main():
                         help="Device for RetinaNet inference (hybrid/retinanet_only modes)")
     parser.add_argument("--use_gt_as_detection", action="store_true",
                         help="Use ground-truth annotations as detection hint instead of running RetinaNet")
+    parser.add_argument("--noise_rate", type=float, default=0.05,
+                        help="Error rate for noising GT detection hints (simulates RetinaNet errors)")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Random seed for reproducible noise")
     args = parser.parse_args()
 
     if args.output_dir is None:
@@ -141,8 +195,12 @@ def main():
             detection_text = ""
             if args.mode in ("hybrid", "retinanet_only"):
                 if args.use_gt_as_detection:
-                    # Use ground-truth as detection hint (simpler, no RetinaNet needed)
-                    detection_text = braille_text
+                    # Use noised ground-truth as detection hint
+                    # Deterministic seed per sample for reproducibility
+                    sample_seed = args.seed + i if args.seed is not None else None
+                    detection_text = add_noise_to_braille(
+                        braille_text, error_rate=args.noise_rate, seed=sample_seed
+                    )
                 else:
                     # Run RetinaNet inference
                     detection_text = run_retinanet_on_image(
