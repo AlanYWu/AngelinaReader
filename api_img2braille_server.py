@@ -77,7 +77,7 @@ def convert_img_to_braille(filename):
             extra_info=None,
             draw_refined=recognizer.DRAW_NONE,
             remove_labeled_from_filename=False,
-            find_orientation=args.orient,
+            find_orientation=False,
             align_results=True,
             process_2_sides=args.two,
             repeat_on_aligned=False,
