@@ -1,3 +1,6 @@
 [submodule "pytorch_retinanet"]
 	path = pytorch_retinanet
 	url = https://github.com/IlyaOvodov/pytorch-retinanet.git
+[submodule "src/ovotools"]
+	path = src/ovotools
+	url = https://github.com/IlyaOvodov/OvoTools
