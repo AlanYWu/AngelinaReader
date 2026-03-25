@@ -6,7 +6,10 @@ import PIL
 
 from braille_utils import letters
 from braille_utils import label_tools as lt
-from braille_utils.postprocess_liblouis import interpret_line_liblouis
+try:
+    from braille_utils.postprocess_liblouis import interpret_line_liblouis
+except (ImportError, OSError):
+    interpret_line_liblouis = None
 
 
 class LineChar:
